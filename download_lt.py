@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import os
+import requests
 
 from contextlib import closing
 from distutils.spawn import find_executable
@@ -17,7 +18,6 @@ from warnings import warn
 from zipfile import ZipFile
 
 try:
-    from urllib.request import urlopen
     from urllib.parse import urljoin
 except ImportError:
     from urllib import urlopen
@@ -128,27 +128,27 @@ def download_lt(update=False):
         return
 
     with closing(TemporaryFile()) as t:
-        with closing(urlopen(url)) as u:
-            content_len = int(u.headers['Content-Length'])
+        req = requests.get(url, stream=True)
+        content_len = int(req.headers.get('Content-Length'))
 
-            sys.stdout.write(
-                'Downloading {!r} ({:.1f} MiB)...\n'.format(
-                    filename,
-                    content_len / 1048576.))
-            sys.stdout.flush()
+        sys.stdout.write(
+            'Downloading {!r} ({:.1f} MiB)...\n'.format(
+                filename,
+                content_len / 1048576.))
+        sys.stdout.flush()
 
-            chunk_len = content_len // 100
-            data_len = 0
-            while True:
-                data = u.read(chunk_len)
-                if not data:
-                    break
-                data_len += len(data)
-                t.write(data)
-                sys.stdout.write(
-                    '\r{:.0%}'.format(float(data_len) / content_len))
-                sys.stdout.flush()
-            sys.stdout.write('\n')
+        chunk_len = content_len // 100
+        data_len = 0
+        if req.status_code == 403:
+            raise Exception('Could not find at URL {}.'.format(url))
+
+        for chunk in req.iter_content(chunk_size=1024):
+            if chunk: # filter out keep-alive new chunks
+                t.write(chunk)
+
+        sys.stdout.write('Downloading completed.\n')
+        sys.stdout.flush()
+
         t.seek(0)
         for old_path in old_path_list:
             if os.path.isdir(old_path):
