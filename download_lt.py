@@ -15,12 +15,8 @@ from tempfile import TemporaryFile
 from warnings import warn
 from zipfile import ZipFile
 
-try:
-    from urllib.request import urlopen
-    from urllib.parse import urljoin
-except ImportError:
-    from urllib import urlopen
-    from urlparse import urljoin
+from urllib import request
+from urllib.parse import urljoin
 
 
 BASE_URL = 'https://www.languagetool.org/download/'
@@ -125,7 +121,8 @@ def download_lt(update=False):
         return
 
     with closing(TemporaryFile()) as t:
-        with closing(urlopen(url)) as u:
+        _request = request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with closing(request.urlopen(_request)) as u:
             content_len = int(u.headers['Content-Length'])
 
             sys.stdout.write(
