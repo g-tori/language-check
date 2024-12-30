@@ -19,7 +19,8 @@ from urllib import request
 from urllib.parse import urljoin
 
 
-BASE_URL = 'https://www.languagetool.org/download/'
+# BASE_URL = 'https://www.languagetool.org/download/'
+BASE_URL = 'https://www.languagetool.org/download/archive/'
 FILENAME = 'LanguageTool-{version}.zip'
 PACKAGE_PATH = 'language_check'
 JAVA_6_COMPATIBLE_VERSION = '2.2'
